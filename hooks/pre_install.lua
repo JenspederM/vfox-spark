@@ -1,4 +1,4 @@
-local util = require("util")
+local util = require("lib.utils")
 
 --- Returns some pre-installed information, such as version number, download address, local files, etc.
 --- If checksum is provided, vfox will automatically check it for you.
