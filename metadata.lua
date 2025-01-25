@@ -1,4 +1,3 @@
---- !!! DO NOT EDIT OR RENAME !!!
 PLUGIN = {}
 
 --- !!! MUST BE SET !!!
@@ -11,7 +10,7 @@ PLUGIN.homepage = "https://github.com/jenspederm/vfox-spark"
 --- Plugin license, please choose a correct license according to your needs.
 PLUGIN.license = "Apache 2.0"
 --- Plugin description
-PLUGIN.description = "Helps manage Apache Spark installations"
+PLUGIN.description = "Apache Spark"
 
 
 --- !!! OPTIONAL !!!
@@ -33,7 +32,7 @@ NOTE:
     you can set this address to the manifest file address, so that the plugin can be updated automatically.
 
  --]]
-PLUGIN.manifestUrl = "https://github.com/jenspederm/vfox-spark/manifest.json"
+-- PLUGIN.manifestUrl = "https://github.com/jenspederm/vfox-spark/manifest.json"
 -- Some things that need user to be attention!
 PLUGIN.notes = {
 }

@@ -11,7 +11,7 @@ description = {
 build = {
    type = "builtin",
    modules = {
-      download = "lib/download.lua",
-      util = "lib/util.lua"
+      spark = "lib/spark.lua",
+      utils = "lib/utils.lua"
    }
 }
