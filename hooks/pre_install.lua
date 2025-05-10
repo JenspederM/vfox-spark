@@ -14,14 +14,6 @@ function PLUGIN:PreInstall(ctx)
     if not details then
         error("Version not found")
     end
-    local file_name = "spark-" .. version .. "-bin-hadoop3.tgz"
-    local download_url = details.url .. "spark-" .. version .. "/" .. file_name
-    -- https://archive.apache.org/dist/spark/spark-3.5.2/spark-3.5.2-bin-hadoop3.tgz
-    -- https://archive.apache.org/dist/spark/spark-3.5.2/3.5.2-bin-hadoop3.tgz
-    print("Download URL: " .. download_url)
-    return {
-        version = version,
-        url = download_url,
-        -- sha512 = file_name .. ".sha512",
-    }
+    local download = spark:Download(version)
+    return download
 end

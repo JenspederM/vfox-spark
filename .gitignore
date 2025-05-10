@@ -1,3 +1,4 @@
+.unused
 .idea/luarocks
 /lua
 /lua_modules
@@ -48,3 +49,4 @@ luac.out
 *.x86_64
 *.hex
 
+/luarocks

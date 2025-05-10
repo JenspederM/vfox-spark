@@ -7,7 +7,6 @@ function PLUGIN:Available(ctx)
     local all_versions = spark:get_all_versions()
     local available = {}
     for _, release in pairs(all_versions) do
-        print(release)
         table.insert(available, release)
     end
     return available

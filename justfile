@@ -9,10 +9,12 @@ install:
 runlib name:
   ./lua ./lib/{{name}}.lua
 
-test:
+test VERSION="3.5.3":
   rm -rf {{TEST_DIR}}
   mkdir -p {{TEST_DIR}}
-  zip -r spark.zip .
+  zip -r -q spark.zip .
   mv spark.zip {{TEST_DIR}}
   vfox add --source {{TEST_DIR}}/spark.zip spark
-  vfox search spark
+  # vfox search spark
+  -vfox install spark@{{VERSION}}
+  vfox use spark@{{VERSION}}
