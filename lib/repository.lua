@@ -1,11 +1,13 @@
-http = require("socket.http")
-local utils = require("lib.utils")
+http = require("http")
+html = require("html")
+local utils = require("utils")
 
 --SimpleRelease
----@class SimpleRelease
+---@class Release
 ---@field version string
 ---@field url string
----@field is_lts boolean
+---@field sha256 string
+---@field sha512 string
 SimpleRelease = {}
 
 --- Repository for Apache Spark
@@ -15,43 +17,26 @@ local repository = {
   fallback = "https://archive.apache.org/dist/spark"
 }
 
-
---- Get the download URL for a specific version of Apache Spark
---- @param version string
---- @return string
-local function get_download_url(version)
-  local default = string.format("%s/spark-%s", repository.url, version)
-  local fallback = string.format("%s/spark-%s", repository.fallback, version)
-  local code = http.request(default)
-  if code ~= 200 then
-    local code = http.request(fallback)
-    if code == 404 then
-      error("Version not found: " .. version)
-    end
-    return fallback
-  end
-  return default
-end
-
 local function get_versions(url)
-  local body, code = http.request(url)
-  if code ~= 200 then return {} end
+  local response, err = http.get({ url = url })
+  if err ~= nil then
+    error("Failed to fetch versions from: " .. url .. " - " .. err)
+  end
+  local doc = html.parse(response.body)
+  local text = doc:find("a"):text()
   local releases = {}
-  for match in string.gmatch(body, 'href="spark%-(%d%.%d%.%d)."') do
-    local suburl = string.format("%s/spark-%s", url, match)
-    local body, code = http.request(suburl)
-    print(suburl, code)
-    if code ~= 200 then
-      error("Failed to fetch: " .. suburl)
-    end
-    -- print("body: " .. body)
-    for file in string.gmatch(body, 'href=\"(spark%-.-)\"') do
-      print("Found: " .. file)
-      -- table.insert(releases, file)
-    end
-    -- table.insert(releases, match)
+  for match in string.gmatch(text, 'spark%-(%d%.%d%.%d).') do
+    table.insert(releases, match)
   end
   return releases
+end
+
+local function parse_sha(url)
+  local response, err = http.get({ url = url })
+  if err then
+    error("Failed to fetch SHA from: " .. url .. " - " .. err)
+  end
+  return response.body:match("([a-f0-9]+)")
 end
 
 --- List all available versions of Apache Spark
@@ -59,21 +44,79 @@ end
 function repository:List()
   local latest = get_versions(self.url)
   local archive = get_versions(self.fallback)
+  local unique_versions = {}
+  local releases = {}
   for _, version in ipairs(archive) do
-    if not utils:Contains(latest, version) then
-      table.insert(latest, version)
+    if not utils:Contains(unique_versions, version) then
+      table.insert(unique_versions, version)
+      if not utils:Contains(latest, version) then
+        table.insert(releases, {
+          name = "spark",
+          version = version,
+        })
+      else
+        table.insert(releases, {
+          name = "spark",
+          version = version,
+          note = "LTS"
+        })
+      end
     end
   end
-  table.sort(latest)
-  local releases = {}
-  for _, version in ipairs(latest) do
-    table.insert(releases, {
-      name = "spark",
-      version = version,
-    })
-  end
-  print(utils:TableToString(releases))
+  table.sort(releases, function(a, b)
+    return a.version > b.version
+  end)
   return releases
+end
+
+--- Get the download URL for a specific version of Apache Spark
+--- @param version string
+--- @return Release
+function repository:GetDownloadUrl(version)
+  local url = string.format("%s/spark-%s", repository.url, version)
+  local response, err = http.get({ url = url })
+  if err then
+    url = string.format("%s/spark-%s", repository.fallback, version)
+    response, err = http.get({ url = url })
+    if err then
+      error("Error fetching from default URL: " .. err)
+    end
+  end
+  local doc = html.parse(response.body)
+  local links = {}
+  doc:find("a"):each(function(_, anchor)
+    local href = anchor:attr("href")
+    if string.match(href, "^spark%-") and string.match(href, "%-hadoop3%.") then
+      table.insert(links, string.format("%s/%s", url, href))
+    end
+  end)
+
+  local downloadUrl
+  local sha256
+  local sha512
+  for _, link in ipairs(links) do
+    if string.match(link, ".tgz$") then
+      downloadUrl = link
+    elseif string.match(link, "%.sha256$") then
+      sha256 = parse_sha(link)
+    elseif string.match(link, "%.sha512$") then
+      sha512 = parse_sha(link)
+    end
+  end
+  print(utils:TableToString({
+    version = version,
+    url = downloadUrl,
+    sha256 = sha256,
+    sha512 = sha512,
+  }))
+  -- error("No valid download URL found for version: " .. version)
+
+  return {
+    version = version,
+    url = downloadUrl,
+    sha256 = sha256,
+    sha512 = sha512,
+  }
 end
 
 -- function utils:Download(version)
@@ -101,7 +144,7 @@ end
 --     print("Downloading: " .. url .. " to test.jpg")
 --     print("Query: " .. PrintTable(parts))
 --     print("File Name: " .. file_name)
---     local body, code = http.request(url)
+--     local body, code = http.get(url)
 --     if not body then error(code) end
 --     -- save the content to a file
 --     local f = assert(io.open(file_name, 'wb')) -- open in "binary" mode
@@ -109,6 +152,6 @@ end
 --     f:close()
 -- end
 
-repository:List()
+-- repository:List()
 
 return repository

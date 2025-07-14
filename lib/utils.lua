@@ -1,4 +1,4 @@
-http = require("socket.http")
+http = require("http")
 
 local utils = {}
 

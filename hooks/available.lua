@@ -1,4 +1,4 @@
-local repository = require("lib.repository")
+local repository = require("repository")
 
 --- Return all available versions provided by this plugin
 --- @param ctx table Empty table used as context, for future extension
